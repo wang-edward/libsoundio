@@ -38,6 +38,12 @@ pub fn build(b: *std.Build) void {
                 .file = b.path("src/pulseaudio.c"),
                 .flags = flags,
             });
+
+            lib.linkSystemLibrary("asound");
+            lib.addCSourceFile(.{
+                .file = b.path("src/alsa.c"),
+                .flags = flags,
+            });
         },
         .macos => {
             lib.linkFramework("CoreFoundation");
@@ -67,7 +73,7 @@ pub fn build(b: *std.Build) void {
     }, .{
         .SOUNDIO_HAVE_JACK = null,
         .SOUNDIO_HAVE_PULSEAUDIO = if (t.os.tag == .linux) {} else null,
-        .SOUNDIO_HAVE_ALSA = null,
+        .SOUNDIO_HAVE_ALSA = if (t.os.tag == .linux) {} else null,
         .SOUNDIO_HAVE_COREAUDIO = if (t.os.tag == .macos) {} else null,
         .SOUNDIO_HAVE_WASAPI = if (t.os.tag == .windows) {} else null,
 
