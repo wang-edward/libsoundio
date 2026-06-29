@@ -794,7 +794,23 @@ static int outstream_clear_buffer_pa(struct SoundIoPrivate *si,
         struct SoundIoOutStreamPrivate *os)
 {
     struct SoundIoOutStreamPulseAudio *ospa = &os->backend_data.pulseaudio;
+    struct SoundIoPulseAudio *sipa = &si->backend_data.pulseaudio;
     SOUNDIO_ATOMIC_FLAG_CLEAR(ospa->clear_buffer_flag);
+
+    if (!pa_threaded_mainloop_in_thread(sipa->main_loop)) {
+        pa_threaded_mainloop_lock(sipa->main_loop);
+    }
+    if (pa_stream_is_corked(ospa->stream)) {
+        pa_operation *op = pa_stream_flush(ospa->stream, NULL, NULL);
+        if (!op) {
+            pa_threaded_mainloop_unlock(sipa->main_loop);
+            return SoundIoErrorStreaming;
+        }
+        pa_operation_unref(op);
+    }
+    if (!pa_threaded_mainloop_in_thread(sipa->main_loop)) {
+        pa_threaded_mainloop_unlock(sipa->main_loop);
+    }
     return 0;
 }
 
